@@ -2,20 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { uploadFileToSupabase } from "@/lib/supabase-storage";
 import { logger } from "@/lib/logger";
 import pdfParse from "pdf-parse";
 import mammoth from "mammoth";
 
 export const dynamic = "force-dynamic";
-
-const s3Client = new S3Client({
-  region: process.env.AWS_REGION || "us-east-1",
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
-  },
-});
 
 // Extract text from PDF
 async function extractPdfText(buffer: Buffer): Promise<string> {
@@ -93,16 +85,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Upload to S3
-    const fileName = `resumes/${session.user.id}/${Date.now()}-${file.name}`;
-    const uploadCommand = new PutObjectCommand({
-      Bucket: process.env.AWS_S3_BUCKET_NAME || "",
-      Key: fileName,
-      Body: buffer,
-      ContentType: file.type,
-    });
+    // Upload to Supabase Storage
+    const uploadResult = await uploadFileToSupabase(
+      buffer,
+      file.name,
+      file.type,
+      session.user.id
+    );
 
-    await s3Client.send(uploadCommand);
+    const fileName = uploadResult.path;
 
     // Save to database
     const resume = await prisma.resume.create({

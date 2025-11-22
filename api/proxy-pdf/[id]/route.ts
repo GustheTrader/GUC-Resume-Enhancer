@@ -2,17 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { downloadFileFromSupabase } from "@/lib/supabase-storage";
 
 export const dynamic = "force-dynamic";
-
-const s3Client = new S3Client({
-  region: process.env.AWS_REGION || "us-east-1",
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
-  },
-});
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -34,24 +26,12 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ message: "Resume not found" }, { status: 404 });
     }
 
-    // Fetch the file from S3
-    const command = new GetObjectCommand({
-      Bucket: process.env.AWS_S3_BUCKET_NAME || "",
-      Key: resume.cloudStoragePath,
-    });
+    // Fetch the file from Supabase Storage
+    const blob = await downloadFileFromSupabase(resume.cloudStoragePath);
 
-    const response = await s3Client.send(command);
-
-    if (!response.Body) {
-      throw new Error("No file body returned from S3");
-    }
-
-    // Convert stream to buffer
-    const chunks: Uint8Array[] = [];
-    for await (const chunk of response.Body as any) {
-      chunks.push(chunk);
-    }
-    const buffer = Buffer.concat(chunks);
+    // Convert blob to buffer
+    const arrayBuffer = await blob.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
     // Return the PDF with proper headers to avoid CORS issues
     return new NextResponse(buffer, {
