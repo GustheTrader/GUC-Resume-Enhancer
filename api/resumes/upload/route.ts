@@ -9,6 +9,19 @@ import mammoth from "mammoth";
 
 export const dynamic = "force-dynamic";
 
+// Sanitize file name to prevent path traversal attacks
+function sanitizeFileName(fileName: string): string {
+  // Remove any path separators and null bytes
+  let sanitized = fileName.replace(/[\/\\]/g, '').replace(/\x00/g, '');
+  // Remove leading dots
+  sanitized = sanitized.replace(/^\.+/, '');
+  // Remove special characters but keep alphanumeric, dots, hyphens, underscores
+  sanitized = sanitized.replace(/[^a-zA-Z0-9._\-]/g, '_');
+  // Limit length to 255 characters
+  sanitized = sanitized.substring(0, 255);
+  return sanitized;
+}
+
 // Extract text from PDF
 async function extractPdfText(buffer: Buffer): Promise<string> {
   try {
@@ -85,10 +98,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Sanitize file name to prevent path traversal attacks
+    const sanitizedFileName = sanitizeFileName(file.name);
+
     // Upload to Supabase Storage
     const uploadResult = await uploadFileToSupabase(
       buffer,
-      file.name,
+      sanitizedFileName,
       file.type,
       session.user.id
     );
@@ -99,7 +115,7 @@ export async function POST(req: NextRequest) {
     const resume = await prisma.resume.create({
       data: {
         userId: session.user.id,
-        originalName: file.name,
+        originalName: file.name, // Keep original name for display
         cloudStoragePath: fileName,
         fileType,
         originalContent: extractedText,

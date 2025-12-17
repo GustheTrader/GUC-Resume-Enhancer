@@ -45,6 +45,7 @@ model User {
   firstName     String?
   lastName      String?
   companyName   String?
+  role          String    @default("user") // user, admin
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   accounts      Account[]

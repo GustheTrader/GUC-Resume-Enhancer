@@ -162,12 +162,12 @@ export function SignUpForm() {
                 id="password"
                 name="password"
                 type="password"
-                placeholder="Create a password"
+                placeholder="Create a password (minimum 12 characters)"
                 value={formData.password}
                 onChange={handleChange}
                 className="pl-10"
                 required
-                minLength={6}
+                minLength={12}
               />
             </div>
           </div>

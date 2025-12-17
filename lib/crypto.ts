@@ -1,18 +1,24 @@
 import crypto from 'crypto';
 
 const ALGORITHM = 'aes-256-gcm';
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-key-please-change-in-production-32chars';
 
-// Ensure the key is 32 bytes for AES-256
+// Get encryption key from environment - REQUIRED in production
 function getEncryptionKey(): Buffer {
-  const key = ENCRYPTION_KEY;
-  if (key.length < 32) {
-    // Pad the key if it's too short
-    return Buffer.from(key.padEnd(32, '0'));
-  } else if (key.length > 32) {
-    // Truncate if too long
-    return Buffer.from(key.substring(0, 32));
+  const key = process.env.ENCRYPTION_KEY;
+
+  if (!key) {
+    throw new Error(
+      'ENCRYPTION_KEY environment variable is not set. ' +
+      'Please set a 32-character encryption key in your environment variables.'
+    );
   }
+
+  if (key.length !== 32) {
+    throw new Error(
+      `ENCRYPTION_KEY must be exactly 32 characters long. Current length: ${key.length}`
+    );
+  }
+
   return Buffer.from(key);
 }
 
@@ -30,7 +36,7 @@ export function encryptApiKey(apiKey: string): string {
     const result = iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted;
     return result;
   } catch (error) {
-    console.error('Encryption error:', error);
+    // Don't log encryption errors to console
     throw new Error('Failed to encrypt API key');
   }
 }
@@ -54,7 +60,7 @@ export function decryptApiKey(encryptedData: string): string {
 
     return decrypted;
   } catch (error) {
-    console.error('Decryption error:', error);
+    // Don't log decryption errors to console
     throw new Error('Failed to decrypt API key');
   }
 }
