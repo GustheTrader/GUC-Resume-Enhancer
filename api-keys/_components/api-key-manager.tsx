@@ -26,7 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { Key, Plus, Trash2, Eye, EyeOff, ExternalLink, Cpu } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
-import { getModelsForProvider, getDefaultModel } from "@/lib/llm-models";
+import { getModelsForProvider, getDefaultModel, type ModelConfig } from "@/lib/llm-models";
 
 interface ApiKey {
   id: string;
@@ -35,6 +35,12 @@ interface ApiKey {
   defaultModel: string;
   isActive: boolean;
   createdAt: string;
+}
+
+interface LLMSelectModel extends ModelConfig {
+  value?: string;
+  label?: string;
+  description?: string;
 }
 
 const PROVIDERS = [
@@ -70,7 +76,7 @@ export function ApiKeyManager() {
   });
   const [showApiKey, setShowApiKey] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [availableModels, setAvailableModels] = useState<any[]>([]);
+  const [availableModels, setAvailableModels] = useState<LLMSelectModel[]>([]);
 
   useEffect(() => {
     fetchApiKeys();

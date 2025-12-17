@@ -5,19 +5,19 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
-  AlertCircle, 
-  Zap, 
-  FileText, 
-  Download, 
-  Eye, 
+import {
+  AlertCircle,
+  Zap,
+  FileText,
+  Download,
+  Eye,
   Settings,
   Target,
   Sparkles,
@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import { Document, Page, pdfjs } from 'react-pdf';
 import Link from "next/link";
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 
 // Configure PDF.js worker - must be after imports
 if (typeof window !== 'undefined') {
@@ -91,15 +92,22 @@ marked.setOptions({
   gfm: true,
 });
 
-// Helper function to clean and render markdown
+// Helper function to clean and render markdown with XSS protection
 function cleanAndRenderMarkdown(content: string): string {
   // Remove code fences if present
   let cleaned = content.replace(/```markdown\n?/g, '').replace(/```\n?/g, '');
-  
+
   // Convert markdown to HTML
   const html = marked.parse(cleaned) as string;
-  
-  return html;
+
+  // Sanitize the HTML to prevent XSS attacks
+  const sanitized = DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'code', 'pre', 'a'],
+    ALLOWED_ATTR: ['href', 'title', 'target', 'rel'],
+    KEEP_CONTENT: true,
+  });
+
+  return sanitized;
 }
 
 export function EnhanceInterface({ resume, hasApiKeys }: Props) {

@@ -122,6 +122,9 @@ async function enhanceWithGemini(apiKey: string, model: string, content: string,
   return data.candidates[0].content.parts[0].text;
 }
 
+// Allowed enhancement types
+const ALLOWED_ENHANCEMENT_TYPES = ['skills_certifications', 'project_experience', 'client_quality'];
+
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
@@ -134,6 +137,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     if (!enhancementType) {
       return NextResponse.json({ message: "Enhancement type is required" }, { status: 400 });
+    }
+
+    // Validate enhancement type against whitelist
+    if (!ALLOWED_ENHANCEMENT_TYPES.includes(enhancementType)) {
+      return NextResponse.json(
+        { message: `Invalid enhancement type. Allowed types: ${ALLOWED_ENHANCEMENT_TYPES.join(', ')}` },
+        { status: 400 }
+      );
     }
 
     // Get the resume

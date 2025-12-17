@@ -7,8 +7,14 @@ import { RecentResumes } from "@/dashboard/_components/recent-resumes";
 export default async function AdminResumesPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session) {
+  if (!session?.user) {
     redirect("/auth/signin");
+  }
+
+  // Check if user has admin role
+  const userRole = (session.user as { role?: string }).role;
+  if (userRole !== "admin") {
+    redirect("/dashboard");
   }
 
   return (

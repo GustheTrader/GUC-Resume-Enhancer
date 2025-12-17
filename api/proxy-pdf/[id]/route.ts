@@ -33,20 +33,19 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const arrayBuffer = await blob.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Return the PDF with proper headers to avoid CORS issues
+    // Return the PDF with proper headers - CORS restricted to same origin
     return new NextResponse(buffer, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `inline; filename="${resume.originalName}"`,
-        'Access-Control-Allow-Origin': '*',
         'Cache-Control': 'public, max-age=3600',
       },
     });
 
   } catch (error: any) {
-    console.error("Error proxying PDF:", error);
+    // Don't log sensitive error details in console
     return NextResponse.json(
-      { message: error.message || "Failed to fetch PDF" },
+      { message: "Failed to fetch PDF" },
       { status: 500 }
     );
   }
